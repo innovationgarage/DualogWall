@@ -2,10 +2,16 @@
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+plt.rcParams.update({'figure.max_open_warning': 0})
 from sklearn.cluster import KMeans
 import sys
 import os
 import pdb
+import scipy.misc
+import PIL
+from PIL import ImageFont
+from PIL import Image
+from PIL import ImageDraw
 
 def centroid_histogram(clt):
     # grab the number of different clusters and create a histogram
@@ -45,8 +51,8 @@ def plot_colors(hist, centroids):
     # return the bar chart, and the most frequent color
     return bar, first_color.astype("uint8")
 
-def get_colors(img_name):
-    image = cv2.imread(os.path.join('crops/', img_name))
+def get_color(img_name, img_path, hr_path):
+    image = cv2.imread(os.path.join(img_path, img_name))
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     h, w, _ = image.shape
@@ -63,18 +69,50 @@ def get_colors(img_name):
     # representing the number of pixels labeled to each color
     hist = centroid_histogram(clt)
     bar, first_color = plot_colors(hist, clt.cluster_centers_)
+
+    bg = np.zeros_like(image)
+    bg = bg + first_color
+
+    return image, bar, bg
+
+img_path = 'crop_image/'
+txt_path = 'crop_text/'
+hr_path = 'postit_hr/'
+
+def generate_postit(img_name, img_path, txt_path):
+    print img_name
+    image, bar, bg = get_colors(img_name, img_path)
+    with open(os.path.join(txt_path, '%s.txt'%(img_name.split('.')[0])), 'r') as f:
+        img_txt = f.read()
+
     
-    # show our color bart
+for img_name in os.listdir(img_path):
+    print img_name
+    image, bar, bg = get_color(img_name, img_path, hr_path)
+    with open(os.path.join(txt_path, '%s.txt'%(img_name.split('.')[0])), 'r') as f:
+        img_txt = f.read()
+
+    # show our color bar
     fig, axs = plt.subplots(1, 3)
     axs = axs.flatten()
     axs[0].imshow(image)
     axs[1].imshow(bar)
-    bg = np.zeros_like(image)
-    bg = bg + first_color
     axs[2].imshow(bg)
+    axs[2].text(0.5, 0.3, img_txt,
+                fontsize=12,
+                horizontalalignment='center',
+                verticalalignment='center',
+                transform=axs[2].transAxes)
     plt.savefig(os.path.join('colors/', img_name))
+    
+    new_postit = Image.fromarray(bg)
+#    new_postit.save(os.path.join(hr_path, img_name), quality=100)
 
-for img_name in os.listdir('crops/'):
-    print img_name
-    get_colors(img_name)
+    #add text
+    W, H = new_postit.size
+    draw = ImageDraw.Draw(new_postit)
+    w, h = draw.textsize(img_txt)
+    draw.text(((W-w)/2,(H-h)/2), img_txt, fill="black")
+
+    new_postit.save(os.path.join(hr_path, img_name), quality=100)
     

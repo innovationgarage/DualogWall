@@ -1,15 +1,18 @@
 # base code from http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams.update({'figure.max_open_warning': 0})
 import cv2
 import sys
 import os
 import pdb
+import scipy.misc
+from PIL import Image
 
-def find_postit(wall_img, postit_img, MIN_MATCH_COUNT, uniqueness):
+def find_postit(wall_img, postit_img, postit_path, MIN_MATCH_COUNT, uniqueness):
     wall_color = cv2.imread(wall_img)
     wall = cv2.cvtColor(wall_color, cv2.COLOR_BGR2GRAY)
-    postit_color = cv2.imread(os.path.join('crops', postit_img))
+    postit_color = cv2.imread(os.path.join(postit_path, postit_img))
     postit = cv2.cvtColor(postit_color, cv2.COLOR_BGR2GRAY)
     postit_w, postit_h = postit.shape
     
@@ -24,7 +27,6 @@ def find_postit(wall_img, postit_img, MIN_MATCH_COUNT, uniqueness):
 
     flann = cv2.FlannBasedMatcher(index_params, search_params)
     matches = flann.knnMatch(des_w,des_p,k=2)
-    #    pdb.set_trace()    
 
     good = []
     for m,n in matches:
@@ -41,14 +43,6 @@ def find_postit(wall_img, postit_img, MIN_MATCH_COUNT, uniqueness):
 
         res = cv2.rectangle(wall, top_left, bottom_right, (0,0,0), 3)
 
-        # M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
-        # matchesMask = mask.ravel().tolist()
-
-        # h,w = wall.shape
-        # pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
-        # dst = cv2.perspectiveTransform(pts,M)
-        # box = cv2.polylines(postit_color,[np.int64(dst)],True,255,4, cv2.LINE_AA)
-
         print "good matches for  %s: %s"%(postit_img, len(good))
 
     else:
@@ -56,30 +50,45 @@ def find_postit(wall_img, postit_img, MIN_MATCH_COUNT, uniqueness):
         matchesMask = None
         res = wall
         
-    # draw_params = dict(matchColor = (255,255,255),
-    #                    singlePointColor = None,
-    #                    matchesMask = matchesMask,
-    #                    flags = 2)
-    # res = cv2.drawMatches(res,kp_w,box,kp_p,good,None,**draw_params)
+    return res, (b_x, b_y)
 
-    return res
-    
+## base code from https://docs.opencv.org/3.2.0/d0/d86/tutorial_py_image_arithmetics.html
+def replace_postit(postit_name, pos, wall_pil, src_path):
+#    wall = cv2.imread(wall_name)
+    wall = np.array(wall_pil)
+    src = cv2.imread(os.path.join(src_path, postit_name))
+
+    x_offset = pos[0]
+    y_offset = pos[1]
+
+    wall[y_offset:y_offset+src.shape[0], x_offset:x_offset+src.shape[1]] = src
+    return wall
+
 wall_img = 'wallNow.jpg'
 res_path = 'res/'
+postit_path = 'crop_image/'
+hr_wall_name = 'hr_wall.jpg'
+hr_path = 'postit_hr/'
 
 # MIN_MATCH_COUNTs = range(5, 30, 5)
 # uniquenesses = np.arange(0.1, 0.9, 0.2)
 
-#empirically best parameters
+#empirically best parameters as long as there are no duplicate post-its
 MIN_MATCH_COUNTs = [2]
 uniquenesses = [0.1]
 
-for postit_img in os.listdir('crops/'):
+wall_arr = cv2.imread(wall_img)
+for postit_img in os.listdir(postit_path):
     fig, ax = plt.subplots(len(MIN_MATCH_COUNTs), len(uniquenesses), figsize=(20,20))
     if len(MIN_MATCH_COUNTs)*len(uniquenesses)==1:
         for i, min_match_count in enumerate(MIN_MATCH_COUNTs):
             for j, uniqueness in enumerate(uniquenesses):
-                res = find_postit(wall_img, postit_img, min_match_count, uniqueness)
+                res, pos = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
+
+                wall_pil = Image.fromarray(wall_arr)
+                wall_arr = replace_postit(postit_img, pos, wall_pil, hr_path)
+                wall_pil = Image.fromarray(wall_arr)
+
                 ax.imshow(res, 'gray')
                 ax.set_title("%s - %s"%(min_match_count, uniqueness))
     else:
@@ -87,9 +96,10 @@ for postit_img in os.listdir('crops/'):
         c = 0
         for i, min_match_count in enumerate(MIN_MATCH_COUNTs):
             for j, uniqueness in enumerate(uniquenesses):
-                res = find_postit(wall_img, postit_img, min_match_count, uniqueness)
+                res = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
                 ax[c].imshow(res, 'gray')
                 ax[c].set_title("%s - %s"%(min_match_count, uniqueness))
                 c += 1
     plt.savefig(os.path.join(res_path, postit_img))
+wall_pil.save(os.path.join('.', hr_wall_name), quality=100)
     
