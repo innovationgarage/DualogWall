@@ -302,3 +302,6 @@ __pycache__/
 **/*.jpg
 **/*.JPG
 **/*.PNG
+
+# text files
+rebuild_the_wall/crop_text/*.txt

@@ -67,9 +67,11 @@ def replace_postit(postit_name, pos, wall_pil, src_path):
 
 if __name__ == "__main__":
 	wall_img = 'wallNow.jpg'
+        wall_img = str(sys.argv[1])
 	res_path = 'res/'
 	postit_path = 'crop_image/'
 	hr_wall_name = 'hr_wall.jpg'
+        hr_wall_name = str(sys.argv[2])
 	hr_path = 'postit_hr/'
 
 	copyfile(wall_img, hr_wall_name)
