@@ -1,4 +1,4 @@
-# base code from https://www.pyimagesearch.com/2014/05/26/opencv-python-k-means-color-clustering/
+# base code to get the main color of the post-it is from https://www.pyimagesearch.com/2014/05/26/opencv-python-k-means-color-clustering/
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -10,7 +10,7 @@ import pdb
 import scipy.misc
 import PIL
 from PIL import ImageFont
-from PIL import Image
+from PIL import Image, ImageOps
 from PIL import ImageDraw
 
 def centroid_histogram(clt):
@@ -85,34 +85,52 @@ def generate_postit(img_name, img_path, txt_path):
     with open(os.path.join(txt_path, '%s.txt'%(img_name.split('.')[0])), 'r') as f:
         img_txt = f.read()
 
-    
-for img_name in os.listdir(img_path):
-    print img_name
-    image, bar, bg = get_color(img_name, img_path, hr_path)
-    with open(os.path.join(txt_path, '%s.txt'%(img_name.split('.')[0])), 'r') as f:
-        img_txt = f.read()
+def pad_img(old_img, exp_factor=1.5, fill=0):
+    old_size = old_img.size
+    new_size = tuple([int(x*exp_factor) for x in old_size])
+    delta_w = new_size[0] - old_size[0]
+    delta_h = new_size[1] - old_size[1]
+    padding = (delta_w//2, delta_h//2, delta_w-(delta_w//2), delta_h-(delta_h//2))
+    return ImageOps.expand(old_img, padding, fill=fill)
 
-    # show our color bar
-    fig, axs = plt.subplots(1, 3)
-    axs = axs.flatten()
-    axs[0].imshow(image)
-    axs[1].imshow(bar)
-    axs[2].imshow(bg)
-    axs[2].text(0.5, 0.3, img_txt,
-                fontsize=12,
-                horizontalalignment='center',
-                verticalalignment='center',
-                transform=axs[2].transAxes)
-    plt.savefig(os.path.join('colors/', img_name))
-    
-    new_postit = Image.fromarray(bg)
-#    new_postit.save(os.path.join(hr_path, img_name), quality=100)
+if __name__ == "__main__":
+	for img_name in os.listdir(img_path):
+	    print img_name
+	    image, bar, bg = get_color(img_name, img_path, hr_path)
+	    with open(os.path.join(txt_path, '%s.txt'%(img_name.split('.')[0])), 'r') as f:
+		img_txt = f.read()
 
-    #add text
-    W, H = new_postit.size
-    draw = ImageDraw.Draw(new_postit)
-    w, h = draw.textsize(img_txt)
-    draw.text(((W-w)/2,(H-h)/2), img_txt, fill="black")
+	    # show our color bar
+	    fig, axs = plt.subplots(1, 3)
+	    axs = axs.flatten()
+	    axs[0].imshow(image)
+	    axs[1].imshow(bar)
+	    axs[2].imshow(bg)
+	    axs[2].text(0.5, 0.3, img_txt,
+		        fontsize=12,
+		        horizontalalignment='center',
+		        verticalalignment='center',
+		        transform=axs[2].transAxes)
+	    plt.savefig(os.path.join('colors/', img_name))
+	    
+	    postit_bg = Image.fromarray(bg)
 
-    new_postit.save(os.path.join(hr_path, img_name), quality=100)
-    
+	    # expand the postit
+	    exp_factor = float(sys.argv[1])
+	    new_postit = pad_img(postit_bg, exp_factor=exp_factor, fill=tuple(bg[0][0]))
+	    
+	    # old_size = postit_bg.size
+	    # new_size = tuple([int(x*exp_factor) for x in old_size])
+	    # delta_w = new_size[0] - old_size[0]
+	    # delta_h = new_size[1] - old_size[1]
+	    # padding = (delta_w//2, delta_h//2, delta_w-(delta_w//2), delta_h-(delta_h//2))
+	    # new_postit = ImageOps.expand(postit_bg, padding, fill=tuple(bg[0][0]))
+	    
+	    # add text
+	    W, H = new_postit.size
+	    draw = ImageDraw.Draw(new_postit)
+	    w, h = draw.textsize(img_txt)
+	    draw.text(((W-w)/2,(H-h)/2), img_txt, fill="black")
+
+	    new_postit.save(os.path.join(hr_path, img_name), quality=100)
+	    

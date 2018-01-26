@@ -1,4 +1,4 @@
-# base code from http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html
+# base code for feature-matching is from http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_feature_homography/py_feature_homography.html
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams.update({'figure.max_open_warning': 0})
@@ -8,6 +8,7 @@ import os
 import pdb
 import scipy.misc
 from PIL import Image
+from shutil import copyfile
 
 def find_postit(wall_img, postit_img, postit_path, MIN_MATCH_COUNT, uniqueness):
     wall_color = cv2.imread(wall_img)
@@ -38,8 +39,8 @@ def find_postit(wall_img, postit_img, postit_path, MIN_MATCH_COUNT, uniqueness):
         dst_pts = np.float32([ kp_p[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
 
         b_x, b_y, b_w, b_h = cv2.boundingRect(src_pts)
-        top_left = (b_x-1, int(b_y-1 + postit_w-1))
-        bottom_right = (int(b_x-1 + postit_h-1), b_y-1)
+        top_left = (b_x, int(b_y + postit_w))
+        bottom_right = (int(b_x + postit_h), b_y)
 
         res = cv2.rectangle(wall, top_left, bottom_right, (0,0,0), 3)
 
@@ -54,52 +55,59 @@ def find_postit(wall_img, postit_img, postit_path, MIN_MATCH_COUNT, uniqueness):
 
 ## base code from https://docs.opencv.org/3.2.0/d0/d86/tutorial_py_image_arithmetics.html
 def replace_postit(postit_name, pos, wall_pil, src_path):
-#    wall = cv2.imread(wall_name)
     wall = np.array(wall_pil)
     src = cv2.imread(os.path.join(src_path, postit_name))
-
+    src = cv2.cvtColor(src, cv2.COLOR_BGR2RGB)
+    
     x_offset = pos[0]
     y_offset = pos[1]
 
     wall[y_offset:y_offset+src.shape[0], x_offset:x_offset+src.shape[1]] = src
     return wall
 
-wall_img = 'wallNow.jpg'
-res_path = 'res/'
-postit_path = 'crop_image/'
-hr_wall_name = 'hr_wall.jpg'
-hr_path = 'postit_hr/'
+if __name__ == "__main__":
+	wall_img = 'wallNow.jpg'
+	res_path = 'res/'
+	postit_path = 'crop_image/'
+	hr_wall_name = 'hr_wall.jpg'
+	hr_path = 'postit_hr/'
 
-# MIN_MATCH_COUNTs = range(5, 30, 5)
-# uniquenesses = np.arange(0.1, 0.9, 0.2)
+	copyfile(wall_img, hr_wall_name)
+	# MIN_MATCH_COUNTs = range(5, 30, 5)
+	# uniquenesses = np.arange(0.1, 0.9, 0.2)
 
-#empirically best parameters as long as there are no duplicate post-its
-MIN_MATCH_COUNTs = [2]
-uniquenesses = [0.1]
+	#empirically best parameters as long as there are no duplicate post-its
+	MIN_MATCH_COUNTs = [2]
+	uniquenesses = [0.1]
+	added_pixels = 100
+	wall_tmp = cv2.imread(hr_wall_name)
+	wall_tmp = cv2.cvtColor(wall_tmp, cv2.COLOR_BGR2RGB)
+	wall_arr = np.zeros((wall_tmp.shape[0], wall_tmp.shape[1] + added_pixels, wall_tmp.shape[2]), dtype=np.uint8)
+	wall_arr[:,:-added_pixels,:] = wall_tmp
+	wall_pil = Image.fromarray(wall_arr)
 
-wall_arr = cv2.imread(wall_img)
-for postit_img in os.listdir(postit_path):
-    fig, ax = plt.subplots(len(MIN_MATCH_COUNTs), len(uniquenesses), figsize=(20,20))
-    if len(MIN_MATCH_COUNTs)*len(uniquenesses)==1:
-        for i, min_match_count in enumerate(MIN_MATCH_COUNTs):
-            for j, uniqueness in enumerate(uniquenesses):
-                res, pos = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
+	for postit_img in os.listdir(hr_path):
+	    fig, ax = plt.subplots(len(MIN_MATCH_COUNTs), len(uniquenesses), figsize=(20,20))
+	    if len(MIN_MATCH_COUNTs)*len(uniquenesses)==1:
+		for i, min_match_count in enumerate(MIN_MATCH_COUNTs):
+		    for j, uniqueness in enumerate(uniquenesses):
+		        res, pos = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
 
-                wall_pil = Image.fromarray(wall_arr)
-                wall_arr = replace_postit(postit_img, pos, wall_pil, hr_path)
-                wall_pil = Image.fromarray(wall_arr)
+		        wall_pil = Image.fromarray(wall_arr)
+		        wall_arr = replace_postit(postit_img, pos, wall_pil, hr_path)
+		        wall_pil = Image.fromarray(wall_arr)
 
-                ax.imshow(res, 'gray')
-                ax.set_title("%s - %s"%(min_match_count, uniqueness))
-    else:
-        ax = ax.flatten()
-        c = 0
-        for i, min_match_count in enumerate(MIN_MATCH_COUNTs):
-            for j, uniqueness in enumerate(uniquenesses):
-                res = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
-                ax[c].imshow(res, 'gray')
-                ax[c].set_title("%s - %s"%(min_match_count, uniqueness))
-                c += 1
-    plt.savefig(os.path.join(res_path, postit_img))
-wall_pil.save(os.path.join('.', hr_wall_name), quality=100)
-    
+		        ax.imshow(res, 'gray')
+		        ax.set_title("%s - %s"%(min_match_count, uniqueness))
+	    else:
+		ax = ax.flatten()
+		c = 0
+		for i, min_match_count in enumerate(MIN_MATCH_COUNTs):
+		    for j, uniqueness in enumerate(uniquenesses):
+		        res = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
+		        ax[c].imshow(res, 'gray')
+		        ax[c].set_title("%s - %s"%(min_match_count, uniqueness))
+		        c += 1
+	    plt.savefig(os.path.join(res_path, postit_img))
+	wall_pil.save(os.path.join('.', hr_wall_name), quality=100)
+	    
