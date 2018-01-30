@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -21,6 +22,9 @@ namespace PostItFinder
 {
     public partial class FormMain : Form
     {
+
+        private readonly string wall;
+        private readonly string[] postit;
 
         public FormMain()
         {
@@ -34,7 +38,7 @@ namespace PostItFinder
             openFileDialogFile.ShowDialog();
             var postit = openFileDialogFile.FileName;*/
 
-            /*var wall = @"D:\GitHub\DualogWall\rpi\WallTool\WallTool\bin\Debug\wallnew.jpg";
+            /*var;
             var postit = @"D:\GitHub\DualogWall\rpi\WallTool\WallTool\bin\Debug\capture.PNG";
 
             //FindMatch(new Mat(wall), new Mat(postit), out long matchtime, out var keypoints, out var observer, out var matches, out var mask, out var homography);
@@ -42,7 +46,25 @@ namespace PostItFinder
             pictureBox1.Image = Draw(new Mat(wall), new Mat(postit), out var time).Bitmap;
             Text = "Took: " + time;*/
 
+            /* openFileDialogFile.Title = "Wall file";
+             openFileDialogFile.ShowDialog();
+             wall = openFileDialogFile.FileName;
+
+
+             openFileDialogFile.Title = "Post it";
+             openFileDialogFile.ShowDialog();
+             postit = openFileDialogFile.FileName;*/
+
+
+            wall = @"D:\GitHub\DualogWall\rpi\WallTool\WallTool\bin\Debug\wallnew.jpg";
+
+            openFileDialogFile.Title = "Post its";
+            openFileDialogFile.Multiselect = true;
+            openFileDialogFile.ShowDialog();
+            postit = openFileDialogFile.FileNames;
             backgroundWorker1.RunWorkerAsync();
+
+            //pictureBox1.Image = Draw(new Mat(wall), new Mat(postit), out var time, 0.8, 300).Bitmap;
 
         }
 
@@ -58,7 +80,7 @@ namespace PostItFinder
 
             modelKeyPoints = new VectorOfKeyPoint();
             observedKeyPoints = new VectorOfKeyPoint();
-
+/*
 #if !__IOS__
             if (CudaInvoke.HasCuda)
             {
@@ -101,7 +123,7 @@ namespace PostItFinder
                 }
             }
             else
-#endif
+#endif*/
             {
                 using (UMat uModelImage = modelImage.GetUMat(Emgu.CV.CvEnum.AccessType.Read))
                 using (UMat uObservedImage = observedImage.GetUMat(AccessType.Read))
@@ -109,8 +131,17 @@ namespace PostItFinder
                     SURF surfCPU = new SURF(hessianThresh);
                     //extract features from the object image
                     UMat modelDescriptors = new UMat();
-                    surfCPU.DetectAndCompute(uModelImage, null, modelKeyPoints, modelDescriptors, false);
+                    try
+                    {
+                        surfCPU.DetectAndCompute(uModelImage, null, modelKeyPoints, modelDescriptors, false);
 
+                    }
+                    catch (Exception e)
+                    {
+                        System.Console.WriteLine(e);
+                        throw;
+                    }
+                   
                     watch = Stopwatch.StartNew();
 
                     // extract features from the observed image
@@ -147,8 +178,9 @@ namespace PostItFinder
         /// <param name="observedImage">The observed image</param>
         /// <param name="matchTime">The output total time for computing the homography matrix.</param>
         /// <returns>The model image and observed image, the matched features and homography projection.</returns>
-        public static Mat Draw(Mat modelImage, Mat observedImage, out long matchTime,double u, double h)
+        public static Mat Draw(Mat modelImage, Mat observedImage, out long matchTime,double u, double h, out bool doesItHasPolylines)
         {
+            doesItHasPolylines = false;
             Mat homography;
             VectorOfKeyPoint modelKeyPoints;
             VectorOfKeyPoint observedKeyPoints;
@@ -157,6 +189,7 @@ namespace PostItFinder
                 Mat mask;
                 FindMatch(modelImage, observedImage, out matchTime, out modelKeyPoints, out observedKeyPoints, matches,
                    out mask, out homography, u, h);
+
 
                 //Draw the matched keypoints
                 Mat result = new Mat();
@@ -167,6 +200,8 @@ namespace PostItFinder
 
                 if (homography != null)
                 {
+                    doesItHasPolylines = true;
+
                     //draw a rectangle along the projected model
                     Rectangle rect = new Rectangle(Point.Empty, modelImage.Size);
                     PointF[] pts = new PointF[]
@@ -182,6 +217,7 @@ namespace PostItFinder
                     using (VectorOfPoint vp = new VectorOfPoint(points))
                     {
                         CvInvoke.Polylines(result, vp, true, new MCvScalar(255, 0, 0, 255), 5);
+                        
                     }
 
                 }
@@ -195,20 +231,39 @@ namespace PostItFinder
 
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
-            var wall = @"D:\GitHub\DualogWall\rpi\WallTool\WallTool\bin\Debug\wallnew.jpg";
-            var postit = @"D:\GitHub\DualogWall\rpi\WallTool\WallTool\bin\Debug\capture3.PNG";
+            
+                for (Double uniquines = 0.95; uniquines <= 1; uniquines += 0.025)
+                    for (Double hessian = 250; hessian <= 310; hessian += 10)
+                    foreach (var p in postit)
+                    {
+                        //FindMatch(new Mat(wall), new Mat(postit), out long matchtime, out var keypoints, out var observer, out var matches, out var mask, out var homography);
 
-            for (Double uniquines = 0.4; uniquines <= 1; uniquines+=0.005)
-                for (Double hessian = 100; hessian <= 600; hessian += 100)
-                {
-                //FindMatch(new Mat(wall), new Mat(postit), out long matchtime, out var keypoints, out var observer, out var matches, out var mask, out var homography);
+                        // Save output
+                        if (!Directory.Exists("output"))
+                            Directory.CreateDirectory("output");
 
-                var img = Draw(new Mat(wall), new Mat(postit), out var time, uniquines,hessian ).Bitmap;
 
-                backgroundWorker1.ReportProgress(0, Tuple.Create(time, img, uniquines + " - " + hessian));
 
-               // Thread.Sleep(4000);
-            }
+                        try
+                        {
+                            var img = Draw(new Mat(wall), new Mat(p), out var time, uniquines, hessian, out bool save).Bitmap;
+
+                            backgroundWorker1.ReportProgress(0, Tuple.Create(time, (Bitmap)img.Clone(), uniquines + " - " + hessian));
+
+
+                            if (save)
+                                img.Save(Path.Combine("output", Path.GetFileNameWithoutExtension(p) + "_" + uniquines + "_" + hessian + ".png"));
+
+                        }
+                        catch (Exception exception)
+                        {
+                            System.Console.WriteLine(exception);
+                        }
+                       
+                        
+
+                        // Thread.Sleep(4000);
+                    }
         }
 
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)

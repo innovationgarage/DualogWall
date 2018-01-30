@@ -1,0 +1,51 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="GoProRetrieve.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="LensCorrectionProgram" Type="System.String" Scope="User">
+      <Value Profile="(Default)">convert</Value>
+    </Setting>
+    <Setting Name="LensCorrectionArgs" Type="System.String" Scope="User">
+      <Value Profile="(Default)">-extent "125%x125%" -gravity center -filter Lagrange -quality 100 {0} -distort Barrel "-0.92578 1.3845 -2.09958" -distort Perspective "1072,1512 0,0 3404,1524 2300,0 3100,2220 2300,1000 1484,2344 0,1000" -gravity northwest -extent "2300x1000" -adaptive-sharpen "1" {1}</Value>
+    </Setting>
+    <Setting Name="CameraKeepAlive" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/command/wireless/ap/ssid?ssid=GARAGEGOPRO</Value>
+    </Setting>
+    <Setting Name="CameraListMedia" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://10.5.5.9/gp/gpMediaList</Value>
+    </Setting>
+    <Setting Name="CameraGetMedia" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://10.5.5.9:8080/videos/DCIM/{0}</Value>
+    </Setting>
+    <Setting Name="CameraDeleteMedia" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/command/storage/delete?p={0}</Value>
+    </Setting>
+    <Setting Name="CameraCapturePhoto" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/command/shutter?p=1</Value>
+    </Setting>
+    <Setting Name="CaptureEveryMinutes" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">60</Value>
+    </Setting>
+    <Setting Name="CaptureTotalPhotos" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="CaptureWaitBetweenPhotoSeconds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">3</Value>
+    </Setting>
+    <Setting Name="CameraKeepAliveEveryMinutes" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">2</Value>
+    </Setting>
+    <Setting Name="CameraCommandsTimeout" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">30</Value>
+    </Setting>
+    <Setting Name="CameraDeleteMediaAll" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/command/storage/delete/all</Value>
+    </Setting>
+    <Setting Name="CameraCommandsRetriesTotal" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">3</Value>
+    </Setting>
+    <Setting Name="CameraCommandsRetryTimeoutSeconds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
