@@ -27,16 +27,16 @@
       <Value Profile="(Default)">60</Value>
     </Setting>
     <Setting Name="CaptureTotalPhotos" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">10</Value>
+      <Value Profile="(Default)">5</Value>
     </Setting>
     <Setting Name="CaptureWaitBetweenPhotoSeconds" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">3</Value>
+      <Value Profile="(Default)">10</Value>
     </Setting>
     <Setting Name="CameraKeepAliveEveryMinutes" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">2</Value>
     </Setting>
     <Setting Name="CameraCommandsTimeout" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">30</Value>
+      <Value Profile="(Default)">5</Value>
     </Setting>
     <Setting Name="CameraDeleteMediaAll" Type="System.String" Scope="User">
       <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/command/storage/delete/all</Value>
@@ -46,6 +46,30 @@
     </Setting>
     <Setting Name="CameraCommandsRetryTimeoutSeconds" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="DirectoryCaptures" Type="System.String" Scope="User">
+      <Value Profile="(Default)">from_camera</Value>
+    </Setting>
+    <Setting Name="DirectoryOutput" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="CheckDifferencesProgram" Type="System.String" Scope="User">
+      <Value Profile="(Default)">convert</Value>
+    </Setting>
+    <Setting Name="CheckDifferencesArgs" Type="System.String" Scope="User">
+      <Value Profile="(Default)"> {0} -evaluate-sequence mean {1}</Value>
+    </Setting>
+    <Setting Name="CompareDifferencesProgram" Type="System.String" Scope="User">
+      <Value Profile="(Default)">compare</Value>
+    </Setting>
+    <Setting Name="CompareDifferencesArgs" Type="System.String" Scope="User">
+      <Value Profile="(Default)">-metric MAE {0} {1} null</Value>
+    </Setting>
+    <Setting Name="CameraSetPhotoMode" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/setting/98/1</Value>
+    </Setting>
+    <Setting Name="CameraSetPhotoQuality" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/setting/17/0</Value>
     </Setting>
   </Settings>
 </SettingsFile>

@@ -121,7 +121,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        [global::System.Configuration.DefaultSettingValueAttribute("5")]
         public int CaptureTotalPhotos {
             get {
                 return ((int)(this["CaptureTotalPhotos"]));
@@ -133,7 +133,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("3")]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
         public int CaptureWaitBetweenPhotoSeconds {
             get {
                 return ((int)(this["CaptureWaitBetweenPhotoSeconds"]));
@@ -157,7 +157,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        [global::System.Configuration.DefaultSettingValueAttribute("5")]
         public int CameraCommandsTimeout {
             get {
                 return ((int)(this["CameraCommandsTimeout"]));
@@ -200,6 +200,102 @@ namespace GoProRetrieve.Properties {
             }
             set {
                 this["CameraCommandsRetryTimeoutSeconds"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("from_camera")]
+        public string DirectoryCaptures {
+            get {
+                return ((string)(this["DirectoryCaptures"]));
+            }
+            set {
+                this["DirectoryCaptures"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DirectoryOutput {
+            get {
+                return ((string)(this["DirectoryOutput"]));
+            }
+            set {
+                this["DirectoryOutput"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("convert")]
+        public string CheckDifferencesProgram {
+            get {
+                return ((string)(this["CheckDifferencesProgram"]));
+            }
+            set {
+                this["CheckDifferencesProgram"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute(" {0} -evaluate-sequence mean {1}")]
+        public string CheckDifferencesArgs {
+            get {
+                return ((string)(this["CheckDifferencesArgs"]));
+            }
+            set {
+                this["CheckDifferencesArgs"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("compare")]
+        public string CompareDifferencesProgram {
+            get {
+                return ((string)(this["CompareDifferencesProgram"]));
+            }
+            set {
+                this["CompareDifferencesProgram"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-metric MAE {0} {1} null")]
+        public string CompareDifferencesArgs {
+            get {
+                return ((string)(this["CompareDifferencesArgs"]));
+            }
+            set {
+                this["CompareDifferencesArgs"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://10.5.5.9/gp/gpControl/setting/98/1")]
+        public string CameraSetPhotoMode {
+            get {
+                return ((string)(this["CameraSetPhotoMode"]));
+            }
+            set {
+                this["CameraSetPhotoMode"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://10.5.5.9/gp/gpControl/setting/17/0")]
+        public string CameraSetPhotoQuality {
+            get {
+                return ((string)(this["CameraSetPhotoQuality"]));
+            }
+            set {
+                this["CameraSetPhotoQuality"] = value;
             }
         }
     }

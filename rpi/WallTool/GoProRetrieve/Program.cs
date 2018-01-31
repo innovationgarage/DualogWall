@@ -21,7 +21,7 @@ namespace GoProRetrieve
 
         static void Log(string msg)
         {
-            Console.WriteLine(msg);
+            Console.WriteLine($"[{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}] {msg}");
         }
 
         // https://stackoverflow.com/questions/1789627/how-to-change-the-timeout-on-a-net-webclient-object
@@ -60,7 +60,13 @@ namespace GoProRetrieve
             // Deleting all
             SendCameraCommand(Settings.Default.CameraDeleteMediaAll, "Deleting old files");
 
+            if (Directory.Exists(Settings.Default.DirectoryCaptures))
+                Directory.Delete(Settings.Default.DirectoryCaptures, true);
+            
             // Do the captures
+            //SendCameraCommand(Settings.Default.CameraSetPhotoMode, "Switching to night mode");
+            //SendCameraCommand(Settings.Default.CameraSetPhotoQuality, "Using highest quality");
+
             var t = Stopwatch.StartNew();
             for (var i = 0; i < Settings.Default.CaptureTotalPhotos; i++)
             {
@@ -75,22 +81,54 @@ namespace GoProRetrieve
             }
 
             // Retrieve file list
+            Thread.Sleep(5000);
             SendCameraCommand(Settings.Default.CameraListMedia, "Listing files", out var jsonMediaList);
 
             // Download photos
             var photos = new List<string>();
             foreach (var element in JObject.Parse(jsonMediaList))
-            {
                 if (element.Key == "media")
                 {
                     foreach (var sub in element.Value)
                         photos.AddRange(sub["fs"].Select(file => $"{sub["d"]}/{file["n"]}"));
-                    break;
+                    break; // Only the first directory
                 }
+
+            var downloaded = photos.Select(DownloadCameraPhoto).Where(p => p != null).ToList();
+
+            // Select the photo with the less chance of having people
+            // TODO: Check for errors while running subprocesses
+            Log("Averaging photos");
+            var averaging = new Process
+            {
+                StartInfo = new ProcessStartInfo(Settings.Default.CheckDifferencesProgram,
+                    string.Format(Settings.Default.CheckDifferencesArgs,
+                        string.Join(" ", downloaded), "tmp_averaged.png"))
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true
+                },
+            };
+
+            averaging.OutputDataReceived += Averaging_OutputDataReceived;
+            averaging.Start();
+            averaging.PriorityClass = ProcessPriorityClass.BelowNormal;
+            averaging.BeginOutputReadLine();
+            averaging.WaitForExit();
+
+            Log("Comparing differences");
+            var differences = new List<double>();
+            foreach (var p in downloaded)
+            {
+                var comparison = Process.Start(new ProcessStartInfo(Settings.Default.CheckDifferencesProgram) { RedirectStandardOutput = true, UseShellExecute = false });
+                comparison.WaitForExit();
+
+                differences.Add(double.Parse(comparison.StandardOutput.ReadToEnd().Split(' ')[0]));
             }
 
-            foreach (var photo in photos)
-                DownloadCameraPhoto(photo);
+            // Keeping the best
+            var best = downloaded[differences.IndexOf(differences.Min())];
+            Log("The best is " + best);
 
             // Lens correction
             /*Log("Doing lens correction");
@@ -101,13 +139,19 @@ namespace GoProRetrieve
             Log("Enhancing image");
         }
 
-        private static void DownloadCameraPhoto(string path)
+        private static void Averaging_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            Log(e.Data);
+        }
+
+        private static string DownloadCameraPhoto(string path)
         {
             Log("Downloading " + path);
 
             var attempts = Settings.Default.CameraCommandsRetriesTotal;
 
-            var outputDirectory = "from_camera";
+            var outputDirectory = Settings.Default.DirectoryCaptures;
+            var outputFilePath = Path.Combine(outputDirectory, Path.GetFileName(path));
 
             if (!Directory.Exists(outputDirectory))
                 Directory.CreateDirectory(outputDirectory);
@@ -116,20 +160,21 @@ namespace GoProRetrieve
                 try
                 {
                     new TimeoutWebClient(Settings.Default.CameraCommandsTimeout).
-                        DownloadFile(string.Format(Settings.Default.CameraGetMedia,path),Path.Combine("from_camera",Path.GetFileName(path)));
+                        DownloadFile(string.Format(Settings.Default.CameraGetMedia,path),outputFilePath);
                     Log("** OK " + path);
-                    break;
+                    return outputFilePath;
                 }
                 catch (Exception ex)
                 {
                     Log($"Error downloading {path} (remaining attempts={attempts}): {ex.Message}");
 
-                    if (--attempts <= 0)
+                    if (--attempts < 0)
                         break;
 
                     // Wait for the next retry
                     Thread.Sleep(Settings.Default.CameraCommandsRetryTimeoutSeconds * 1000);
                 }
+            return null;
         }
 
         private static void SendCameraCommand(string command, string message)
@@ -158,7 +203,7 @@ namespace GoProRetrieve
                     Log($"{message} -> Error (remaining attempts={attempts}): {ex.Message}");
 
                     response = null;
-                    if (--attempts <= 0)
+                    if (--attempts < 0)
                         break;
 
                     // Wait for the next retry
@@ -169,7 +214,8 @@ namespace GoProRetrieve
         private static void KeepCameraAlive(object state)
         {
             // Keep camera alive
-            SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive");
+            lock(keepAlive)
+                SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive");
         }
     }
 
