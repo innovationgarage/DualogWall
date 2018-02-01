@@ -54,7 +54,9 @@ def find_postit(wall_img, postit_img, postit_path, MIN_MATCH_COUNT, uniqueness):
     else:
         print ("Not enough matches are found in %s- %d/%d" %(postit_img, len(good),MIN_MATCH_COUNT))
         matchesMask = None
-        res = wall
+        res = None
+        b_x = 0
+        b_y = 0
         
     return res, (b_x, b_y)
 
@@ -101,29 +103,18 @@ if __name__ == "__main__":
         if len(MIN_MATCH_COUNTs)*len(uniquenesses)==1:
             for i, min_match_count in enumerate(MIN_MATCH_COUNTs):
                 for j, uniqueness in enumerate(uniquenesses):
-                    try:
-                        res, pos = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
+                    res, pos = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
 
-                        wall_pil = Image.fromarray(wall_arr)
-                        wall_arr = replace_postit(postit_img, pos, wall_pil, hr_path)
-                        wall_pil = Image.fromarray(wall_arr)
+                    if(res is None):
+                        continue
 
-                        ax.imshow(res, 'gray')
-                        ax.set_title("%s - %s"%(min_match_count, uniqueness)) 
-                    finally:
-                        pass
-        else:
-            ax = ax.flatten()
-            c = 0
-            for i, min_match_count in enumerate(MIN_MATCH_COUNTs):
-                for j, uniqueness in enumerate(uniquenesses):
-                    try:
-                        res = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
-                        ax[c].imshow(res, 'gray')
-                        ax[c].set_title("%s - %s"%(min_match_count, uniqueness))
-                        c += 1  
-                    finally:
-                        pass            
-        plt.savefig(os.path.join(res_path, postit_img))
+                    wall_pil = Image.fromarray(wall_arr)
+                    wall_arr = replace_postit(postit_img, pos, wall_pil, hr_path)
+                    wall_pil = Image.fromarray(wall_arr)
+
+                    ax.imshow(res, 'gray')
+                    ax.set_title("%s - %s"%(min_match_count, uniqueness))
+
+        #plt.savefig(os.path.join(res_path, postit_img))
     wall_pil.save(os.path.join('.', hr_wall_name), quality=100)
 
