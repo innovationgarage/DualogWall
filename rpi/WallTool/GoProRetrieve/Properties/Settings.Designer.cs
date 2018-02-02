@@ -121,7 +121,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("5")]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
         public int CaptureTotalPhotos {
             get {
                 return ((int)(this["CaptureTotalPhotos"]));
@@ -133,7 +133,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        [global::System.Configuration.DefaultSettingValueAttribute("30")]
         public int CaptureWaitBetweenPhotoSeconds {
             get {
                 return ((int)(this["CaptureWaitBetweenPhotoSeconds"]));
@@ -145,7 +145,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("2")]
+        [global::System.Configuration.DefaultSettingValueAttribute("3")]
         public int CameraKeepAliveEveryMinutes {
             get {
                 return ((int)(this["CameraKeepAliveEveryMinutes"]));
@@ -157,13 +157,13 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("5")]
-        public int CameraCommandsTimeout {
+        [global::System.Configuration.DefaultSettingValueAttribute("15")]
+        public int CameraCommandsTimeoutSeconds {
             get {
-                return ((int)(this["CameraCommandsTimeout"]));
+                return ((int)(this["CameraCommandsTimeoutSeconds"]));
             }
             set {
-                this["CameraCommandsTimeout"] = value;
+                this["CameraCommandsTimeoutSeconds"] = value;
             }
         }
         
@@ -217,37 +217,25 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string DirectoryOutput {
-            get {
-                return ((string)(this["DirectoryOutput"]));
-            }
-            set {
-                this["DirectoryOutput"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("convert")]
-        public string CheckDifferencesProgram {
+        public string MergePhotosProgram {
             get {
-                return ((string)(this["CheckDifferencesProgram"]));
+                return ((string)(this["MergePhotosProgram"]));
             }
             set {
-                this["CheckDifferencesProgram"] = value;
+                this["MergePhotosProgram"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute(" {0} -evaluate-sequence mean {1}")]
-        public string CheckDifferencesArgs {
+        public string MergePhotosArgs {
             get {
-                return ((string)(this["CheckDifferencesArgs"]));
+                return ((string)(this["MergePhotosArgs"]));
             }
             set {
-                this["CheckDifferencesArgs"] = value;
+                this["MergePhotosArgs"] = value;
             }
         }
         
@@ -265,7 +253,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("-metric MAE {0} {1} null")]
+        [global::System.Configuration.DefaultSettingValueAttribute("-metric MAE {0} {1} null:")]
         public string CompareDifferencesArgs {
             get {
                 return ((string)(this["CompareDifferencesArgs"]));
@@ -296,6 +284,102 @@ namespace GoProRetrieve.Properties {
             }
             set {
                 this["CameraSetPhotoQuality"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("tmp_averaged.png")]
+        public string CompareDifferencesTemporalFilename {
+            get {
+                return ((string)(this["CompareDifferencesTemporalFilename"]));
+            }
+            set {
+                this["CompareDifferencesTemporalFilename"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("wall_final.png")]
+        public string FinalImageBeforeEnhancementFilename {
+            get {
+                return ((string)(this["FinalImageBeforeEnhancementFilename"]));
+            }
+            set {
+                this["FinalImageBeforeEnhancementFilename"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("python3")]
+        public string ImageEnhancementProgram {
+            get {
+                return ((string)(this["ImageEnhancementProgram"]));
+            }
+            set {
+                this["ImageEnhancementProgram"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("rebuild_wall.py {0} {1}")]
+        public string ImageEnhancementArgs {
+            get {
+                return ((string)(this["ImageEnhancementArgs"]));
+            }
+            set {
+                this["ImageEnhancementArgs"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("wall_enhanced.png")]
+        public string FinalImageFilename {
+            get {
+                return ((string)(this["FinalImageFilename"]));
+            }
+            set {
+                this["FinalImageFilename"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://wall.innovationgarage.no/upload.php")]
+        public string FinalImageUploadServer {
+            get {
+                return ((string)(this["FinalImageUploadServer"]));
+            }
+            set {
+                this["FinalImageUploadServer"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("rebuild_postits.py 1.2")]
+        public string ImagePreEnhancementArgs {
+            get {
+                return ((string)(this["ImagePreEnhancementArgs"]));
+            }
+            set {
+                this["ImagePreEnhancementArgs"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("python3")]
+        public string ImagePreEnhancementProgram {
+            get {
+                return ((string)(this["ImagePreEnhancementProgram"]));
+            }
+            set {
+                this["ImagePreEnhancementProgram"] = value;
             }
         }
     }

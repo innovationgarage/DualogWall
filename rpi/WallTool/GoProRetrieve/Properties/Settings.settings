@@ -27,16 +27,16 @@
       <Value Profile="(Default)">60</Value>
     </Setting>
     <Setting Name="CaptureTotalPhotos" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">5</Value>
-    </Setting>
-    <Setting Name="CaptureWaitBetweenPhotoSeconds" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">10</Value>
     </Setting>
-    <Setting Name="CameraKeepAliveEveryMinutes" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">2</Value>
+    <Setting Name="CaptureWaitBetweenPhotoSeconds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">30</Value>
     </Setting>
-    <Setting Name="CameraCommandsTimeout" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">5</Value>
+    <Setting Name="CameraKeepAliveEveryMinutes" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">3</Value>
+    </Setting>
+    <Setting Name="CameraCommandsTimeoutSeconds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">15</Value>
     </Setting>
     <Setting Name="CameraDeleteMediaAll" Type="System.String" Scope="User">
       <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/command/storage/delete/all</Value>
@@ -50,26 +50,47 @@
     <Setting Name="DirectoryCaptures" Type="System.String" Scope="User">
       <Value Profile="(Default)">from_camera</Value>
     </Setting>
-    <Setting Name="DirectoryOutput" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="CheckDifferencesProgram" Type="System.String" Scope="User">
+    <Setting Name="MergePhotosProgram" Type="System.String" Scope="User">
       <Value Profile="(Default)">convert</Value>
     </Setting>
-    <Setting Name="CheckDifferencesArgs" Type="System.String" Scope="User">
+    <Setting Name="MergePhotosArgs" Type="System.String" Scope="User">
       <Value Profile="(Default)"> {0} -evaluate-sequence mean {1}</Value>
     </Setting>
     <Setting Name="CompareDifferencesProgram" Type="System.String" Scope="User">
       <Value Profile="(Default)">compare</Value>
     </Setting>
     <Setting Name="CompareDifferencesArgs" Type="System.String" Scope="User">
-      <Value Profile="(Default)">-metric MAE {0} {1} null</Value>
+      <Value Profile="(Default)">-metric MAE {0} {1} null:</Value>
     </Setting>
     <Setting Name="CameraSetPhotoMode" Type="System.String" Scope="User">
       <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/setting/98/1</Value>
     </Setting>
     <Setting Name="CameraSetPhotoQuality" Type="System.String" Scope="User">
       <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/setting/17/0</Value>
+    </Setting>
+    <Setting Name="CompareDifferencesTemporalFilename" Type="System.String" Scope="User">
+      <Value Profile="(Default)">tmp_averaged.png</Value>
+    </Setting>
+    <Setting Name="FinalImageBeforeEnhancementFilename" Type="System.String" Scope="User">
+      <Value Profile="(Default)">wall_final.png</Value>
+    </Setting>
+    <Setting Name="ImageEnhancementProgram" Type="System.String" Scope="User">
+      <Value Profile="(Default)">python3</Value>
+    </Setting>
+    <Setting Name="ImageEnhancementArgs" Type="System.String" Scope="User">
+      <Value Profile="(Default)">rebuild_wall.py {0} {1}</Value>
+    </Setting>
+    <Setting Name="FinalImageFilename" Type="System.String" Scope="User">
+      <Value Profile="(Default)">wall_enhanced.png</Value>
+    </Setting>
+    <Setting Name="FinalImageUploadServer" Type="System.String" Scope="User">
+      <Value Profile="(Default)">https://wall.innovationgarage.no/upload.php</Value>
+    </Setting>
+    <Setting Name="ImagePreEnhancementArgs" Type="System.String" Scope="User">
+      <Value Profile="(Default)">rebuild_postits.py 1.2</Value>
+    </Setting>
+    <Setting Name="ImagePreEnhancementProgram" Type="System.String" Scope="User">
+      <Value Profile="(Default)">python3</Value>
     </Setting>
   </Settings>
 </SettingsFile>

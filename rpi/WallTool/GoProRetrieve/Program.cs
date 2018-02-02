@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -21,7 +23,7 @@ namespace GoProRetrieve
 
         static void Log(string msg)
         {
-            Console.WriteLine($"[{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}] {msg}");
+            Console.WriteLine($"[{DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}] {msg}");
         }
 
         // https://stackoverflow.com/questions/1789627/how-to-change-the-timeout-on-a-net-webclient-object
@@ -45,7 +47,7 @@ namespace GoProRetrieve
         static void Main(string[] args)
         {
             Log("Initializing");
- 
+
             keepAlive = new Timer(KeepCameraAlive, null, Settings.Default.CameraKeepAliveEveryMinutes * 60 * 1000,
                 Settings.Default.CameraKeepAliveEveryMinutes * 60 * 1000);
 
@@ -57,101 +59,155 @@ namespace GoProRetrieve
 
         private static void CaptureAndDownload(object state)
         {
-            // Deleting all
-            SendCameraCommand(Settings.Default.CameraDeleteMediaAll, "Deleting old files");
-
-            if (Directory.Exists(Settings.Default.DirectoryCaptures))
-                Directory.Delete(Settings.Default.DirectoryCaptures, true);
-            
-            // Do the captures
-            //SendCameraCommand(Settings.Default.CameraSetPhotoMode, "Switching to night mode");
-            //SendCameraCommand(Settings.Default.CameraSetPhotoQuality, "Using highest quality");
-
-            var t = Stopwatch.StartNew();
-            for (var i = 0; i < Settings.Default.CaptureTotalPhotos; i++)
+            try
             {
-                if (i > 0)
-                    Thread.Sleep(Math.Max(0,
-                        (int) (Settings.Default.CaptureWaitBetweenPhotoSeconds * 1000 -
-                               t.ElapsedMilliseconds))); // Wait for the next time
+                Log("Preparing image enhancement in the background");
+                Process.Start(Settings.Default.ImageEnhancementProgram, string.Format(Settings.Default.ImagePreEnhancementArgs));
 
-                t.Restart();
-                SendCameraCommand(Settings.Default.CameraCapturePhoto,
-                    $"Capture {i + 1} of {Settings.Default.CaptureTotalPhotos}");
-            }
+                // Deleting all
+                SendCameraCommand(Settings.Default.CameraDeleteMediaAll, "Deleting old files");
 
-            // Retrieve file list
-            Thread.Sleep(5000);
-            SendCameraCommand(Settings.Default.CameraListMedia, "Listing files", out var jsonMediaList);
+                if (Directory.Exists(Settings.Default.DirectoryCaptures))
+                    Directory.Delete(Settings.Default.DirectoryCaptures, true);
 
-            // Download photos
-            var photos = new List<string>();
-            foreach (var element in JObject.Parse(jsonMediaList))
-                if (element.Key == "media")
+                // Do the captures
+                //SendCameraCommand(Settings.Default.CameraSetPhotoMode, "Switching to night mode");
+                //SendCameraCommand(Settings.Default.CameraSetPhotoQuality, "Using highest quality");
+
+                var t = Stopwatch.StartNew();
+                for (var i = 0; i < Settings.Default.CaptureTotalPhotos; i++)
                 {
-                    foreach (var sub in element.Value)
-                        photos.AddRange(sub["fs"].Select(file => $"{sub["d"]}/{file["n"]}"));
-                    break; // Only the first directory
+                    if (i > 0)
+                        Thread.Sleep(Math.Max(0,
+                            (int)(Settings.Default.CaptureWaitBetweenPhotoSeconds * 1000 -
+                                   t.ElapsedMilliseconds))); // Wait for the next time
+
+                    t.Restart();
+                    SendCameraCommand(Settings.Default.CameraCapturePhoto,
+                        $"Capture {i + 1} of {Settings.Default.CaptureTotalPhotos}");
                 }
 
-            var downloaded = photos.Select(DownloadCameraPhoto).Where(p => p != null).ToList();
+                // Retrieve file list
+                Thread.Sleep(5000);
+                SendCameraCommand(Settings.Default.CameraListMedia, "Listing files", out var jsonMediaList);
 
-            // Select the photo with the less chance of having people
-            // TODO: Check for errors while running subprocesses
-            Log("Averaging photos");
-            var averaging = new Process
-            {
-                StartInfo = new ProcessStartInfo(Settings.Default.CheckDifferencesProgram,
-                    string.Format(Settings.Default.CheckDifferencesArgs,
-                        string.Join(" ", downloaded), "tmp_averaged.png"))
+                // Download photos
+                var photos = new List<string>();
+                foreach (var element in JObject.Parse(jsonMediaList))
+                    if (element.Key == "media")
+                    {
+                        foreach (var sub in element.Value)
+                            photos.AddRange(sub["fs"].Select(file => $"{sub["d"]}/{file["n"]}"));
+                        break; // Only the first directory
+                    }
+
+                var downloaded = (from p in photos.Select(DownloadCameraPhoto) where p != null select p.Value).ToList();
+
+                // Select the photo with the less chance of having people
+                // TODO: Check for errors while running subprocesses
+                Log("Averaging photos (This might take a while)");
+
+                var averaging = new Process
                 {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true
-                },
-            };
+                    StartInfo = new ProcessStartInfo(Settings.Default.MergePhotosProgram,
+                        string.Format(Settings.Default.MergePhotosArgs, string.Join(" ", downloaded.Select(i => i.ThumbnailPath)),
+                        Settings.Default.CompareDifferencesTemporalFilename))
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true
+                    },
+                };
 
-            averaging.OutputDataReceived += Averaging_OutputDataReceived;
-            averaging.Start();
-            averaging.PriorityClass = ProcessPriorityClass.BelowNormal;
-            averaging.BeginOutputReadLine();
-            averaging.WaitForExit();
+                averaging.OutputDataReceived += Averaging_OutputDataReceived;
+                averaging.ErrorDataReceived += Averaging_OutputDataReceived;
 
-            Log("Comparing differences");
-            var differences = new List<double>();
-            foreach (var p in downloaded)
-            {
-                var comparison = Process.Start(new ProcessStartInfo(Settings.Default.CheckDifferencesProgram) { RedirectStandardOutput = true, UseShellExecute = false });
-                comparison.WaitForExit();
+                averaging.Start();
+                //averaging.PriorityClass = ProcessPriorityClass.BelowNormal;
+                averaging.BeginOutputReadLine();
+                averaging.BeginErrorReadLine();
+                averaging.WaitForExit();
 
-                differences.Add(double.Parse(comparison.StandardOutput.ReadToEnd().Split(' ')[0]));
+                Log("Comparing differences");
+                double minimum = double.MaxValue;
+                var selected = downloaded.First();
+
+                foreach (var photo in downloaded)
+                {
+                    var comparison = Process.Start(new ProcessStartInfo(Settings.Default.CompareDifferencesProgram,
+                        string.Format(Settings.Default.CompareDifferencesArgs, photo.ThumbnailPath, Settings.Default.CompareDifferencesTemporalFilename))
+                    {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                    });
+                    comparison.WaitForExit();
+
+                    //Log(comparison.StartInfo.FileName + " args:"+ comparison.StartInfo.Arguments);
+                    var c = comparison.StandardOutput.ReadToEnd() + comparison.StandardError.ReadToEnd();
+                    Log("Result: " + c);
+
+                    var m = double.Parse(c.Split(' ')[0].Trim().Replace(".", new NumberFormatInfo().NumberDecimalSeparator));
+                    Log($"Comparison {photo.Path} <=> {Settings.Default.CompareDifferencesTemporalFilename}: {m}");
+
+                    if (!(minimum > m)) continue;
+
+                    minimum = m;
+                    selected = photo;
+                }
+
+                // Keeping the best
+                Log("The best is " + selected.Path);
+
+                // Lens correction
+                Log("Doing lens correction and sharpening (This might also take a while)");
+                var lens = Process.Start(Settings.Default.LensCorrectionProgram,
+                    string.Format(Settings.Default.LensCorrectionArgs, selected.Path, Settings.Default.FinalImageBeforeEnhancementFilename));
+                lens.WaitForExit();
+
+                // Other enhancements
+                Log("Enhancing image");
+                Process.Start(Settings.Default.ImageEnhancementProgram, string.Format(Settings.Default.ImageEnhancementArgs,
+                    Settings.Default.FinalImageBeforeEnhancementFilename, Settings.Default.FinalImageFilename)).WaitForExit();
+
+                Log("Ready. Uploading: " + Settings.Default.FinalImageFilename);
+
+                var wc = new WebClient();
+                wc.Headers.Add("Content-Type", "binary/octet-stream");
+                wc.UploadFile(Settings.Default.FinalImageUploadServer, "POST", Settings.Default.FinalImageFilename);
+
+                Log("All done");
             }
+            catch(Exception ex)
+            {
+                // https://stackoverflow.com/questions/3328990/c-sharp-get-line-number-which-threw-exception
+                var st = new StackTrace(ex, true);
 
-            // Keeping the best
-            var best = downloaded[differences.IndexOf(differences.Min())];
-            Log("The best is " + best);
+                // Get the top stack frame
+                var frame = st.GetFrames().Last();
 
-            // Lens correction
-            /*Log("Doing lens correction");
-            var p = Process.Start(Settings.Default.LensCorrectionProgram, Settings.Default.LensCorrectionArgs);
-            p.WaitForExit();*/
-
-            // Other enhancements
-            Log("Enhancing image");
+                Log($"Error (in {frame.GetMethod().Name}:{frame.GetFileLineNumber()}) while running: {ex.Message}");
+            }
         }
 
         private static void Averaging_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
+            if (string.IsNullOrEmpty(e.Data.Trim()))
+                return;
+
             Log(e.Data);
         }
 
-        private static string DownloadCameraPhoto(string path)
+        private static CameraPhoto? DownloadCameraPhoto(string path)
         {
             Log("Downloading " + path);
 
             var attempts = Settings.Default.CameraCommandsRetriesTotal;
 
             var outputDirectory = Settings.Default.DirectoryCaptures;
-            var outputFilePath = Path.Combine(outputDirectory, Path.GetFileName(path));
+            var n = Path.GetFileName(path);
+            var outputPhotoPath = Path.Combine(outputDirectory, n);
+            var outputThumbPath = Path.Combine(outputDirectory, "thumb_" + n);
 
             if (!Directory.Exists(outputDirectory))
                 Directory.CreateDirectory(outputDirectory);
@@ -159,10 +215,15 @@ namespace GoProRetrieve
             while (true)
                 try
                 {
-                    new TimeoutWebClient(Settings.Default.CameraCommandsTimeout).
-                        DownloadFile(string.Format(Settings.Default.CameraGetMedia,path),outputFilePath);
+                    new TimeoutWebClient(Settings.Default.CameraCommandsTimeoutSeconds).
+                        DownloadFile(string.Format(Settings.Default.CameraGetMedia,path),outputPhotoPath);
+
+                    // Make thumbnail
+                    var bmp = Image.FromFile(outputPhotoPath);
+                    bmp.GetThumbnailImage(bmp.Width / 4, bmp.Height / 4, null, IntPtr.Zero).Save(outputThumbPath);
+
                     Log("** OK " + path);
-                    return outputFilePath;
+                    return new CameraPhoto { Path = outputPhotoPath, ThumbnailPath = outputThumbPath};
                 }
                 catch (Exception ex)
                 {
@@ -191,7 +252,7 @@ namespace GoProRetrieve
             while (true)
                 try
                 {
-                    var wc = new TimeoutWebClient(Settings.Default.CameraCommandsTimeout);
+                    var wc = new TimeoutWebClient(Settings.Default.CameraCommandsTimeoutSeconds);
                     response = wc.DownloadString(command);
 
                     Log($"{message} -> {{{wc.ResponseHeaders}}},\"{response}\"".Replace("\n", string.Empty)
@@ -219,4 +280,9 @@ namespace GoProRetrieve
         }
     }
 
+    internal struct CameraPhoto
+    {
+        public string Path;
+        public string ThumbnailPath;
+    }
 }
