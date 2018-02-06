@@ -19,6 +19,9 @@ Script to get the GoPro image, correct the lens distortion, sharpen it and uploa
         mkdir build
         cd build
         cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D INSTALL_C_EXAMPLES=OFF -D BUILD_DOCS=OFF -D BUILD_PERF_TESTS=OFF -D BUILD_TESTS=OFF -D INSTALL_PYTHON_EXAMPLES=OFF -D OPENCV_EXTRA_MODULES_PATH=~/opencv_contrib-3.4.0/modules -D BUILD_EXAMPLES=OFF ..
+        make
+        sudo make install
+        sudo ldconfig
 
 # Test it
 ---
