@@ -4,6 +4,7 @@ Script to get the GoPro image, correct the lens distortion, sharpen it and uploa
 # Script for testing connectivity 
 Connect to the camera wifi and run (change `CAMERAWIFINAME`):
 
+```bash
         #!/bin/bash
         while :
         do
@@ -14,6 +15,7 @@ Connect to the camera wifi and run (change `CAMERAWIFINAME`):
         echo Waiting ...
         sleep 30
         done
+```
 
 # Remove some clutter
 
