@@ -133,7 +133,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        [global::System.Configuration.DefaultSettingValueAttribute("20")]
         public int CaptureWaitBetweenPhotoSeconds {
             get {
                 return ((int)(this["CaptureWaitBetweenPhotoSeconds"]));
@@ -145,7 +145,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("3")]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
         public int CameraKeepAliveEveryMinutes {
             get {
                 return ((int)(this["CameraKeepAliveEveryMinutes"]));
@@ -157,7 +157,7 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("15")]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
         public int CameraCommandsTimeoutSeconds {
             get {
                 return ((int)(this["CameraCommandsTimeoutSeconds"]));
@@ -380,6 +380,30 @@ namespace GoProRetrieve.Properties {
             }
             set {
                 this["ImagePreEnhancementProgram"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("06:41:69:2d:3b:14")]
+        public string CameraPhysicalAddress {
+            get {
+                return ((string)(this["CameraPhysicalAddress"]));
+            }
+            set {
+                this["CameraPhysicalAddress"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10.5.5.9")]
+        public string CameraIPAddress {
+            get {
+                return ((string)(this["CameraIPAddress"]));
+            }
+            set {
+                this["CameraIPAddress"] = value;
             }
         }
     }

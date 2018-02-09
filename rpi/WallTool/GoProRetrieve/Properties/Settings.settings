@@ -30,13 +30,13 @@
       <Value Profile="(Default)">10</Value>
     </Setting>
     <Setting Name="CaptureWaitBetweenPhotoSeconds" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">30</Value>
+      <Value Profile="(Default)">20</Value>
     </Setting>
     <Setting Name="CameraKeepAliveEveryMinutes" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">3</Value>
+      <Value Profile="(Default)">1</Value>
     </Setting>
     <Setting Name="CameraCommandsTimeoutSeconds" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">15</Value>
+      <Value Profile="(Default)">10</Value>
     </Setting>
     <Setting Name="CameraDeleteMediaAll" Type="System.String" Scope="User">
       <Value Profile="(Default)">http://10.5.5.9/gp/gpControl/command/storage/delete/all</Value>
@@ -91,6 +91,12 @@
     </Setting>
     <Setting Name="ImagePreEnhancementProgram" Type="System.String" Scope="User">
       <Value Profile="(Default)">python3</Value>
+    </Setting>
+    <Setting Name="CameraPhysicalAddress" Type="System.String" Scope="User">
+      <Value Profile="(Default)">06:41:69:2d:3b:14</Value>
+    </Setting>
+    <Setting Name="CameraIPAddress" Type="System.String" Scope="User">
+      <Value Profile="(Default)">10.5.5.9</Value>
     </Setting>
   </Settings>
 </SettingsFile>

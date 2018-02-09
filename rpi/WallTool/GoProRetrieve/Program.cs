@@ -1,27 +1,28 @@
-﻿using System;
-using System.Collections;
+﻿using GoProRetrieve.Properties;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
+using System.Net.NetworkInformation;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
-using System.Threading.Tasks;
-using GoProRetrieve.Properties;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Encoder = System.Drawing.Imaging.Encoder;
 
 namespace GoProRetrieve
 {
     class Program
     {
-        private static Timer keepAlive;
-        private static Timer downloadPictures;
+        private static Timer _keepAlive;
+        private static readonly object Transferring = new object();
 
-        static void Log(string msg)
+        private static void Log(string msg)
         {
             Console.WriteLine($"[{DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}] {msg}");
         }
@@ -44,17 +45,29 @@ namespace GoProRetrieve
             }
         }
 
+        // https://msdn.microsoft.com/en-us/library/ytz20d80%28v=vs.110%29.aspx?f=255&MSPPError=-2147217396
+        private static ImageCodecInfo GetEncoderInfo(string mimeType)
+        {
+            return ImageCodecInfo.GetImageEncoders().FirstOrDefault(t => t.MimeType == mimeType);
+        }
+
         static void Main(string[] args)
         {
+            ServicePointManager.ServerCertificateValidationCallback = MyRemoteCertificateValidationCallback;
+            var s = Stopwatch.StartNew();
             Log("Initializing");
 
-            keepAlive = new Timer(KeepCameraAlive, null, Settings.Default.CameraKeepAliveEveryMinutes * 60 * 1000,
-                Settings.Default.CameraKeepAliveEveryMinutes * 60 * 1000);
+            _keepAlive = new Timer(KeepCameraAlive);
+            DoCameraKeepAliveNow();
 
-            downloadPictures = new Timer(CaptureAndDownload, null, 0,
-                Settings.Default.CaptureEveryMinutes * 60 * 1000);
+            do
+            {
+                CaptureAndDownload(null);
 
-            Thread.Sleep(Timeout.Infinite);
+                Log("Waiting now");
+                Thread.Sleep(Math.Max(1,Settings.Default.CaptureEveryMinutes * 60 * 1000 - (int)s.ElapsedMilliseconds));
+                s.Restart();
+            } while (true);
         }
 
         private static void CaptureAndDownload(object state)
@@ -74,11 +87,14 @@ namespace GoProRetrieve
                 //SendCameraCommand(Settings.Default.CameraSetPhotoMode, "Switching to night mode");
                 //SendCameraCommand(Settings.Default.CameraSetPhotoQuality, "Using highest quality");
 
+                // Force a keep alive here
+                DoCameraKeepAliveNow();
+
                 var t = Stopwatch.StartNew();
                 for (var i = 0; i < Settings.Default.CaptureTotalPhotos; i++)
                 {
                     if (i > 0)
-                        Thread.Sleep(Math.Max(0,
+                        Thread.Sleep(Math.Max(1,
                             (int)(Settings.Default.CaptureWaitBetweenPhotoSeconds * 1000 -
                                    t.ElapsedMilliseconds))); // Wait for the next time
 
@@ -89,6 +105,10 @@ namespace GoProRetrieve
 
                 // Retrieve file list
                 Thread.Sleep(5000);
+
+                // Force a keep alive here
+                DoCameraKeepAliveNow();
+
                 SendCameraCommand(Settings.Default.CameraListMedia, "Listing files", out var jsonMediaList);
 
                 // Download photos
@@ -123,7 +143,7 @@ namespace GoProRetrieve
                 averaging.ErrorDataReceived += Averaging_OutputDataReceived;
 
                 averaging.Start();
-                //averaging.PriorityClass = ProcessPriorityClass.BelowNormal;
+                averaging.PriorityClass = ProcessPriorityClass.BelowNormal;
                 averaging.BeginOutputReadLine();
                 averaging.BeginErrorReadLine();
                 averaging.WaitForExit();
@@ -141,6 +161,7 @@ namespace GoProRetrieve
                         RedirectStandardError = true,
                         UseShellExecute = false,
                     });
+                    comparison.PriorityClass = ProcessPriorityClass.BelowNormal;
                     comparison.WaitForExit();
 
                     //Log(comparison.StartInfo.FileName + " args:"+ comparison.StartInfo.Arguments);
@@ -167,27 +188,95 @@ namespace GoProRetrieve
 
                 // Other enhancements
                 Log("Enhancing image");
-                Process.Start(Settings.Default.ImageEnhancementProgram, string.Format(Settings.Default.ImageEnhancementArgs,
-                    Settings.Default.FinalImageBeforeEnhancementFilename, Settings.Default.FinalImageFilename)).WaitForExit();
+                var now = DateTime.Now;
+                var finalImageName = "wall_" + now.ToString("yyyyMMddHHmm") + ".jpg";
+                var enhancedImageName = "enhanced-" + finalImageName;
 
-                Log("Ready. Uploading: " + Settings.Default.FinalImageFilename);
+                using (var img = new Bitmap(Settings.Default.FinalImageBeforeEnhancementFilename))
+                {
+                    img.Save(finalImageName, GetEncoderInfo("image/jpeg"),
+                        new EncoderParameters {Param = {[0] = new EncoderParameter(Encoder.Quality, 95L)}});
+                }
 
-                var wc = new WebClient();
-                wc.Headers.Add("Content-Type", "binary/octet-stream");
-                wc.UploadFile(Settings.Default.FinalImageUploadServer, "POST", Settings.Default.FinalImageFilename);
+                var enhancement = Process.Start(Settings.Default.ImageEnhancementProgram, string.Format(Settings.Default.ImageEnhancementArgs,
+                    Settings.Default.FinalImageBeforeEnhancementFilename, enhancedImageName));
+                enhancement.PriorityClass = ProcessPriorityClass.BelowNormal;
+                enhancement.WaitForExit();
+
+                foreach (var image in new[] { finalImageName, enhancedImageName })
+                {
+                    Log("Uploading: " + image);
+
+                    for (var i = 0; i < Settings.Default.CameraCommandsRetriesTotal; i++)
+                        try
+                        {
+                            var wc = new TimeoutWebClient();
+                            wc.Headers.Add("Content-Type", "binary/octet-stream");
+                            wc.UploadFile(Settings.Default.FinalImageUploadServer, "POST", image);
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log("Upload failed: " + ex.Message);
+                            Thread.Sleep(1000);
+                            Log("Retrying ... ");
+                        }
+                }
 
                 Log("All done");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 // https://stackoverflow.com/questions/3328990/c-sharp-get-line-number-which-threw-exception
                 var st = new StackTrace(ex, true);
 
                 // Get the top stack frame
                 var frame = st.GetFrames().Last();
-
                 Log($"Error (in {frame.GetMethod().Name}:{frame.GetFileLineNumber()}) while running: {ex.Message}");
             }
+        }
+
+        private static void DoCameraKeepAliveNow()
+        {
+            _keepAlive.Change(Settings.Default.CameraKeepAliveEveryMinutes * 60 * 1000, Settings.Default.CameraKeepAliveEveryMinutes * 60 * 1000);
+            KeepCameraAlive(null);
+        }
+
+        // https://stackoverflow.com/questions/4926676/mono-https-webrequest-fails-with-the-authentication-or-decryption-has-failed
+
+        public static bool MyRemoteCertificateValidationCallback(Object sender, X509Certificate certificate,
+            X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            var isOk = true;
+            // If there are errors in the certificate chain,
+            // look at each error to determine the cause.
+
+            try
+            {
+                if (sslPolicyErrors != SslPolicyErrors.None)
+                {
+                    foreach (var t in chain.ChainStatus)
+                    {
+                        if (t.Status == X509ChainStatusFlags.RevocationStatusUnknown) continue;
+
+                        chain.ChainPolicy.RevocationFlag = X509RevocationFlag.EntireChain;
+                        chain.ChainPolicy.RevocationMode = X509RevocationMode.Online;
+                        chain.ChainPolicy.UrlRetrievalTimeout = new TimeSpan(0, 1, 0);
+                        chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllFlags;
+
+                        if (chain.Build((X509Certificate2)certificate)) continue;
+
+                        isOk = false;
+                        break;
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Log("Error in certificate validation: " + ex.Message);
+                isOk = false;
+            }
+            return isOk;
         }
 
         private static void Averaging_OutputDataReceived(object sender, DataReceivedEventArgs e)
@@ -243,40 +332,47 @@ namespace GoProRetrieve
             SendCameraCommand(command, message, out var r);
         }
 
-        private static void SendCameraCommand(string command, string message, out string response)
+        private static void SendCameraCommand(string command, string message, out string response, bool retry = true)
         {
-            Log($"{message} ...");
+            lock (Transferring)
+            {
+                Log($"{message} ...");
 
-            var attempts = Settings.Default.CameraCommandsRetriesTotal;
+                for (var i = 0; i < Settings.Default.CameraCommandsRetriesTotal; i++)
+                    try
+                    {
+                        var wc = new TimeoutWebClient(Settings.Default.CameraCommandsTimeoutSeconds);
+                        response = wc.DownloadString(command);
 
-            while (true)
-                try
-                {
-                    var wc = new TimeoutWebClient(Settings.Default.CameraCommandsTimeoutSeconds);
-                    response = wc.DownloadString(command);
+                        Log($"{message} -> {{{wc.ResponseHeaders}}},\"{response}\"".Replace("\n", string.Empty)
+                            .Replace("\r", string.Empty));
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"{message} -> Error (attempt={i}): {ex.Message}");
 
-                    Log($"{message} -> {{{wc.ResponseHeaders}}},\"{response}\"".Replace("\n", string.Empty)
-                        .Replace("\r", string.Empty));
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    Log($"{message} -> Error (remaining attempts={attempts}): {ex.Message}");
+                        if (!retry)
+                            break;
 
-                    response = null;
-                    if (--attempts < 0)
-                        break;
+                        // Wait for the next retry
+                        Thread.Sleep(Settings.Default.CameraCommandsRetryTimeoutSeconds * 1000);
+                    }
 
-                    // Wait for the next retry
-                    Thread.Sleep(Settings.Default.CameraCommandsRetryTimeoutSeconds * 1000);
-                }
+                response = null;
+            }
         }
 
         private static void KeepCameraAlive(object state)
         {
             // Keep camera alive
-            lock(keepAlive)
-                SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive");
+            // Sending wake on Lan
+            var camera = PhysicalAddress.Parse(Settings.Default.CameraPhysicalAddress.ToUpper().Replace(':', '-'));
+            camera.SendWol();
+
+            // TODO: Check other IPs to broadcast the WOL
+
+            SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive", out var s, false);
         }
     }
 
