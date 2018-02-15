@@ -30,10 +30,15 @@ Connect to the camera wifi and run (change `CAMERAWIFINAME`):
 
 
 ## OpenCV
-        sudo apt-get install build-essential cmake cmake-curses-gui pkg-config 
-        sudo apt-get install libgdk-pixbuf2.0-dev libpango1.0-dev libcairo2-dev 
-        sudo apt-get install libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev libavcodec-dev libavformat-dev libswscale-dev libeigen3-dev libxvidcore-dev libx264-dev libgtk2.0-dev
+From: https://www.pyimagesearch.com/2015/12/14/installing-opencv-on-your-raspberry-pi-zero/
+
+        sudo apt-get install build-essential cmake pkg-config
+        sudo apt-get install libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev
+        sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
+        sudo apt-get install libxvidcore-dev libx264-dev
+        sudo apt-get install libgtk2.0-dev
         sudo apt-get install libatlas-base-dev gfortran
+        sudo apt-get install python2.7-dev
         wget -O opencv.zip https://github.com/opencv/opencv/archive/3.4.0.zip
         wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/3.4.0.zip 
         unzip opencv.zip
