@@ -29,6 +29,26 @@ Connect to the camera wifi and run (change `CAMERAWIFINAME`):
         sudo apt-get install mono-complete imagemagick
 
 
+## Increase swap
+OpenCV may not compile if the swap is too small. You might get errors similar to:
+
+```makefile
+        c++: internal compiler error: Killed (program cc1plus)
+        Please submit a full bug report,
+        with preprocessed source if appropriate.
+        See <file:///usr/share/doc/gcc-6/README.Bugs> for instructions.
+        modules/python2/CMakeFiles/opencv_python2.dir/build.make:62: recipe for target 'modules/python2/CMakeFiles/opencv_python2.dir/__/src2/cv2.cpp.o' failed
+        make[2]: *** [modules/python2/CMakeFiles/opencv_python2.dir/__/src2/cv2.cpp.o] Error 4
+        CMakeFiles/Makefile2:7998: recipe for target 'modules/python2/CMakeFiles/opencv_python2.dir/all' failed
+        make[1]: *** [modules/python2/CMakeFiles/opencv_python2.dir/all] Error 2
+        Makefile:160: recipe for target 'all' failed
+        make: *** [all] Error 2
+```
+
+Increase the size to 512 or more here:
+
+        sudo nano /etc/dphys-swapfile
+
 ## OpenCV
 From: https://www.pyimagesearch.com/2015/12/14/installing-opencv-on-your-raspberry-pi-zero/
 
@@ -51,9 +71,6 @@ From: https://www.pyimagesearch.com/2015/12/14/installing-opencv-on-your-raspber
         sudo make install
         sudo ldconfig
 
-## Increase swap
-
-        sudo nano /etc/dphys-swapfile
 
 
 # Test it
