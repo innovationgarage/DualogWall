@@ -53,7 +53,7 @@ From: https://www.pyimagesearch.com/2015/12/14/installing-opencv-on-your-raspber
 
 ## Increase swap
 
-
+        sudo nano /etc/dphys-swapfile
 
 
 # Test it
