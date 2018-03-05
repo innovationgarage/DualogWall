@@ -20,7 +20,7 @@ namespace GoProRetrieve
     class Program
     {
         private static Timer _keepAlive;
-        private static readonly object Transferring = new object();
+        private static readonly object Transferring = new object(), KeepingCameraAlive = new object();
 
         private static void Log(string msg)
         {
@@ -365,14 +365,19 @@ namespace GoProRetrieve
 
         private static void KeepCameraAlive(object state)
         {
-            // Keep camera alive
-            // Sending wake on Lan
-            var camera = PhysicalAddress.Parse(Settings.Default.CameraPhysicalAddress.ToUpper().Replace(':', '-'));
-            camera.SendWol();
+            if (Monitor.TryEnter(KeepingCameraAlive))
+            {
+                // Keep camera alive
+                // Sending wake on Lan
+                var camera = PhysicalAddress.Parse(Settings.Default.CameraPhysicalAddress.ToUpper().Replace(':', '-'));
+                camera.SendWol();
 
-            // TODO: Check other IPs to broadcast the WOL
+                // TODO: Check other IPs to broadcast the WOL
 
-            SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive", out var s, false);
+                SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive", out var s, false);
+            }
+            else
+                Log("Skipping this keep alive message. There is one waiting already.");
         }
     }
 
