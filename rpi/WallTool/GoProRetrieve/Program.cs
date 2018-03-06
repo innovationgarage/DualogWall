@@ -134,18 +134,18 @@ namespace GoProRetrieve
                         Settings.Default.CompareDifferencesTemporalFilename))
                     {
                         UseShellExecute = false,
-                        RedirectStandardError = true,
-                        RedirectStandardOutput = true
+                        /*RedirectStandardError = true,
+                        RedirectStandardOutput = true*/
                     },
                 };
 
-                averaging.OutputDataReceived += Averaging_OutputDataReceived;
-                averaging.ErrorDataReceived += Averaging_OutputDataReceived;
+                //averaging.OutputDataReceived += Averaging_OutputDataReceived;
+                //averaging.ErrorDataReceived += Averaging_OutputDataReceived;
 
                 averaging.Start();
                 averaging.PriorityClass = ProcessPriorityClass.BelowNormal;
-                averaging.BeginOutputReadLine();
-                averaging.BeginErrorReadLine();
+                //averaging.BeginOutputReadLine();
+                //averaging.BeginErrorReadLine();
                 averaging.WaitForExit();
 
                 Log("Comparing differences");
@@ -158,8 +158,8 @@ namespace GoProRetrieve
                         string.Format(Settings.Default.CompareDifferencesArgs, photo.ThumbnailPath, Settings.Default.CompareDifferencesTemporalFilename))
                     {
                         RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
+                        /*RedirectStandardError = true,
+                        UseShellExecute = false,*/
                     });
                     comparison.PriorityClass = ProcessPriorityClass.BelowNormal;
                     comparison.WaitForExit();
