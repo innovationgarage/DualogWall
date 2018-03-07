@@ -11,7 +11,9 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Security;
+using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 using Encoder = System.Drawing.Imaging.Encoder;
 
@@ -127,25 +129,11 @@ namespace GoProRetrieve
                 // TODO: Check for errors while running subprocesses
                 Log("Averaging photos (This might take a while)");
 
-                var averaging = new Process
-                {
-                    StartInfo = new ProcessStartInfo(Settings.Default.MergePhotosProgram,
+                var averaging = Process.Start(Settings.Default.MergePhotosProgram,
                         string.Format(Settings.Default.MergePhotosArgs, string.Join(" ", downloaded.Select(i => i.ThumbnailPath)),
-                        Settings.Default.CompareDifferencesTemporalFilename))
-                    {
-                        UseShellExecute = false,
-                        /*RedirectStandardError = true,
-                        RedirectStandardOutput = true*/
-                    },
-                };
+                        Settings.Default.CompareDifferencesTemporalFilename));
 
-                //averaging.OutputDataReceived += Averaging_OutputDataReceived;
-                //averaging.ErrorDataReceived += Averaging_OutputDataReceived;
-
-                averaging.Start();
                 averaging.PriorityClass = ProcessPriorityClass.BelowNormal;
-                //averaging.BeginOutputReadLine();
-                //averaging.BeginErrorReadLine();
                 averaging.WaitForExit();
 
                 Log("Comparing differences");
@@ -155,12 +143,7 @@ namespace GoProRetrieve
                 foreach (var photo in downloaded)
                 {
                     var comparison = Process.Start(new ProcessStartInfo(Settings.Default.CompareDifferencesProgram,
-                        string.Format(Settings.Default.CompareDifferencesArgs, photo.ThumbnailPath, Settings.Default.CompareDifferencesTemporalFilename))
-                    {
-                        RedirectStandardOutput = true,
-                        /*RedirectStandardError = true,
-                        UseShellExecute = false,*/
-                    });
+                        string.Format(Settings.Default.CompareDifferencesArgs, photo.ThumbnailPath, Settings.Default.CompareDifferencesTemporalFilename)));
                     comparison.PriorityClass = ProcessPriorityClass.BelowNormal;
                     comparison.WaitForExit();
 
@@ -238,7 +221,7 @@ namespace GoProRetrieve
 
         private static void DoCameraKeepAliveNow()
         {
-            _keepAlive.Change(Settings.Default.CameraKeepAliveEveryMinutes * 60 * 1000, Settings.Default.CameraKeepAliveEveryMinutes * 60 * 1000);
+            _keepAlive.Change(Settings.Default.CameraKeepAliveEverySeconds * 1000, Settings.Default.CameraKeepAliveEverySeconds * 1000);
             KeepCameraAlive(null);
         }
 
@@ -369,12 +352,27 @@ namespace GoProRetrieve
             {
                 // Keep camera alive
                 // Sending wake on Lan
-                var camera = PhysicalAddress.Parse(Settings.Default.CameraPhysicalAddress.ToUpper().Replace(':', '-'));
-                camera.SendWol();
+                /*var camera = PhysicalAddress.Parse(Settings.Default.CameraPhysicalAddress.ToUpper().Replace(':', '-'));
+                camera.SendWol();*/
 
                 // TODO: Check other IPs to broadcast the WOL
 
-                SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive", out var s, false);
+                //new TcpClient(new IPEndPoint()).
+                try
+                {
+                    var m = Encoding.UTF8.GetBytes("_GPHD_:0:0:2:0.000000\n");
+                    var c = new UdpClient(AddressFamily.InterNetwork);
+                    Log($"Sending Keep alive, bytes sent: {c.Send(m, m.Length, "10.5.5.9", 8554)}");
+                    c.Close();
+                    //Log($"Sending Keep alive, bytes sent: {new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp).SendTo(Encoding.UTF8.GetBytes("_GPHD_:0:0:2:0.000000\n"), new IPEndPoint(IPAddress.Parse("10.5.5.9"), 8554))}");
+                }
+                catch (Exception ex)
+                {
+                    Log("Error with Keep alive: " + ex.Message);
+                }
+
+                Monitor.Exit(KeepingCameraAlive);
+                //SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive", out var s, false);
             }
             else
                 Log("Skipping this keep alive message. There is one waiting already.");

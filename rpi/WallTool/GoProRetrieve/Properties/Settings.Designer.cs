@@ -145,13 +145,13 @@ namespace GoProRetrieve.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
-        public int CameraKeepAliveEveryMinutes {
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int CameraKeepAliveEverySeconds {
             get {
-                return ((int)(this["CameraKeepAliveEveryMinutes"]));
+                return ((int)(this["CameraKeepAliveEverySeconds"]));
             }
             set {
-                this["CameraKeepAliveEveryMinutes"] = value;
+                this["CameraKeepAliveEverySeconds"] = value;
             }
         }
         

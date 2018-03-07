@@ -32,8 +32,8 @@
     <Setting Name="CaptureWaitBetweenPhotoSeconds" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">20</Value>
     </Setting>
-    <Setting Name="CameraKeepAliveEveryMinutes" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1</Value>
+    <Setting Name="CameraKeepAliveEverySeconds" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
     </Setting>
     <Setting Name="CameraCommandsTimeoutSeconds" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">10</Value>
