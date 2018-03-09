@@ -73,7 +73,7 @@ def replace_postit(postit_name, pos, wall_pil, src_path):
     return wall
 
 if __name__ == "__main__":
-    wall_img = 'output.png'
+    wall_img = 'input.png'
     if(len(sys.argv)>1):
         wall_img = str(sys.argv[1])
     res_path = 'res/'
@@ -96,6 +96,8 @@ if __name__ == "__main__":
     wall_tmp = cv2.cvtColor(wall_tmp, cv2.COLOR_BGR2RGB)
     wall_arr = np.zeros((wall_tmp.shape[0], wall_tmp.shape[1] + added_pixels, wall_tmp.shape[2]), dtype=np.uint8)
     wall_arr[:,:-added_pixels,:] = wall_tmp
+
+    reference_size = Image.open(hr_wall_name).size
     wall_pil = Image.fromarray(wall_arr)
 
     for postit_img in os.listdir(hr_path):
@@ -116,5 +118,5 @@ if __name__ == "__main__":
                     ax.set_title("%s - %s"%(min_match_count, uniqueness))
 
         #plt.savefig(os.path.join(res_path, postit_img))
-    wall_pil.save(os.path.join('.', hr_wall_name), quality=100)
+    wall_pil.crop((0,0)+reference_size).save(os.path.join('.', hr_wall_name), quality=100)
 
