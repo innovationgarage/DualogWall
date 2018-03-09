@@ -57,7 +57,9 @@ namespace GoProRetrieve
         {
             ServicePointManager.ServerCertificateValidationCallback = MyRemoteCertificateValidationCallback;
             var s = Stopwatch.StartNew();
-            Log("Initializing");
+            Log("Initializing.");
+            Log("Remember to connect your phone and keep the preview at least 10 minutes to prevent the camera to enter sleep mode.");
+            Log("Set the camera in Night Photo mode for best results or Normal Photo mode.");
 
             _keepAlive = new Timer(KeepCameraAlive);
             DoCameraKeepAliveNow();
@@ -143,7 +145,8 @@ namespace GoProRetrieve
                 foreach (var photo in downloaded)
                 {
                     var comparison = Process.Start(new ProcessStartInfo(Settings.Default.CompareDifferencesProgram,
-                        string.Format(Settings.Default.CompareDifferencesArgs, photo.ThumbnailPath, Settings.Default.CompareDifferencesTemporalFilename)));
+                        string.Format(Settings.Default.CompareDifferencesArgs, photo.ThumbnailPath, Settings.Default.CompareDifferencesTemporalFilename))
+                    { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false });
                     comparison.PriorityClass = ProcessPriorityClass.BelowNormal;
                     comparison.WaitForExit();
 
@@ -348,12 +351,13 @@ namespace GoProRetrieve
 
         private static void KeepCameraAlive(object state)
         {
-            if (Monitor.TryEnter(KeepingCameraAlive))
+            /*if (Monitor.TryEnter(KeepingCameraAlive))
             {
                 // Keep camera alive
                 // Sending wake on Lan
-                /*var camera = PhysicalAddress.Parse(Settings.Default.CameraPhysicalAddress.ToUpper().Replace(':', '-'));
-                camera.SendWol();*/
+                var camera = PhysicalAddress.Parse(Settings.Default.CameraPhysicalAddress.ToUpper().Replace(':', '-'));
+                camera.SendWol();
+                camera.SendWol(IPAddress.Parse("10.5.5.9"));
 
                 // TODO: Check other IPs to broadcast the WOL
 
@@ -364,6 +368,9 @@ namespace GoProRetrieve
                     var c = new UdpClient(AddressFamily.InterNetwork);
                     Log($"Sending Keep alive, bytes sent: {c.Send(m, m.Length, "10.5.5.9", 8554)}");
                     c.Close();
+
+                    SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive", out var s, false);
+
                     //Log($"Sending Keep alive, bytes sent: {new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp).SendTo(Encoding.UTF8.GetBytes("_GPHD_:0:0:2:0.000000\n"), new IPEndPoint(IPAddress.Parse("10.5.5.9"), 8554))}");
                 }
                 catch (Exception ex)
@@ -372,10 +379,11 @@ namespace GoProRetrieve
                 }
 
                 Monitor.Exit(KeepingCameraAlive);
-                //SendCameraCommand(Settings.Default.CameraKeepAlive, "Keeping camera alive", out var s, false);
             }
             else
-                Log("Skipping this keep alive message. There is one waiting already.");
+                Log("Skipping this keep alive message. There is one waiting already.");*/
+
+            SendCameraCommand("http://10.5.5.9/gp/gpControl/status", "Asking for status", out string r, false);
         }
     }
 
