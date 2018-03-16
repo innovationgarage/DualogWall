@@ -56,7 +56,7 @@ namespace PostItFinder
              postit = openFileDialogFile.FileName;*/
 
 
-            wall = @"D:\GitHub\DualogWall\rpi\WallTool\WallTool\bin\Debug\wallnew.jpg";
+            wall = @"D:\GitHub\DualogWall\rpi\release\input.png";
 
             openFileDialogFile.Title = "Post its";
             openFileDialogFile.Multiselect = true;

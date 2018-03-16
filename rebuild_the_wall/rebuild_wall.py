@@ -85,12 +85,12 @@ if __name__ == "__main__":
     hr_path = 'tmp_postits/'
 
     copyfile(wall_img, hr_wall_name)
-    # MIN_MATCH_COUNTs = range(5, 30, 5)
+    # MIN_MATCH_COUNTs = range(5, 30, 5
     # uniquenesses = np.arange(0.1, 0.9, 0.2)
 
     #empirically best parameters as long as there are no duplicate post-its
     MIN_MATCH_COUNTs = [2]
-    uniquenesses = [0.1]
+    uniquenesses = [0.05]
     added_pixels = 100
     wall_tmp = cv2.imread(hr_wall_name)
     wall_tmp = cv2.cvtColor(wall_tmp, cv2.COLOR_BGR2RGB)
@@ -105,18 +105,21 @@ if __name__ == "__main__":
         if len(MIN_MATCH_COUNTs)*len(uniquenesses)==1:
             for i, min_match_count in enumerate(MIN_MATCH_COUNTs):
                 for j, uniqueness in enumerate(uniquenesses):
-                    res, pos = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
+                    try:
+                        res, pos = find_postit(wall_img, postit_img, postit_path, min_match_count, uniqueness)
 
-                    if(res is None):
-                        continue
+                        if(res is None):
+                            continue
 
-                    wall_pil = Image.fromarray(wall_arr)
-                    wall_arr = replace_postit(postit_img, pos, wall_pil, hr_path)
-                    wall_pil = Image.fromarray(wall_arr)
-
-                    ax.imshow(res, 'gray')
-                    ax.set_title("%s - %s"%(min_match_count, uniqueness))
+                        wall_pil = Image.fromarray(wall_arr)
+                        wall_arr = replace_postit(postit_img, pos, wall_pil, hr_path)
+                        wall_pil = Image.fromarray(wall_arr)
+                        ax.imshow(res, 'gray')
+                        ax.set_title("%s - %s"%(min_match_count, uniqueness))
+                    except:
+                        print("Unexpected error:", sys.exc_info()[0])
+                        continue  
 
         #plt.savefig(os.path.join(res_path, postit_img))
     wall_pil.crop((0,0)+reference_size).save(os.path.join('.', hr_wall_name), quality=100)
-
+print("All done.")
